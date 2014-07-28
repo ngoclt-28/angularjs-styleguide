@@ -1,12 +1,12 @@
-# AngularJS styleguide
+# AngularJS スタイルガイド
 
-*Opinionated AngularJS styleguide for teams by [@toddmotto](//twitter.com/toddmotto)*
+*チーム開発のための AngularJS スタイルガイド by [@toddmotto](//twitter.com/toddmotto)*
 
-From my experience with [Angular](//angularjs.org), [several talks](https://speakerdeck.com/toddmotto) and working in teams, here's my opinionated styleguide for syntax, building and structuring Angular applications.
+[講演](https://speakerdeck.com/toddmotto)やチーム開発での [Angular](//angularjs.org) の経験により作成した AngularJS アプリケーションのシンタックスや構造についてのスタイルガイド。
 
 > See the [original article](http://toddmotto.com/opinionated-angular-js-styleguide-for-teams)
 
-## Table of Contents
+## 目次
 
   1. [Modules](#modules)
   1. [Controllers](#controllers)
@@ -22,7 +22,7 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
 
 ## Modules
 
-  - **Definitions**: Declare modules without a variable using the setter and getter syntax
+  - **定義**: 変数を使わずに setter / getter で module を定義
 
     ```javascript
     // bad
@@ -37,9 +37,9 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
       .factory();
     ```
 
-  - Note: Using `angular.module('app', []);` sets a module, whereas `angular.module('app');` gets the module. Only set once and get for all other instances.
+  - 注釈: `angular.module('app', []);` を setter、`angular.module('app');` を getter として使う。setter で module を定義し、他のインスタンスからは getter でその module を取得して利用する。
 
-  - **Methods**: Pass functions into module methods rather than assign as a callback
+  - **メソッド**: コールバックとして記述せず、function を定義してメソッドに渡す
 
     ```javascript
     // bad
@@ -65,9 +65,9 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
       .service('SomeService', SomeService);
     ```
 
-  - This aids with readability and reduces the volume of code "wrapped" inside the Angular framework
+  - コードのネストが深くなることを抑え、可読性を高める
   
-  - **IIFE scoping**: To avoid polluting the global scope with our function declarations which get passed into Angular, ensure build tasks wrap the concatenated files inside an IIFE
+  - **IIFE（イッフィー：即時関数式）スコープ**: Angular に渡す function の定義でグローバルスコープを汚染することを避けるため、複数ファイルを連結（concatenate）するビルドタスクで IIFE 内にラップする
   
     ```javascript
     (function () {
@@ -103,7 +103,7 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
 
 ## Controllers
 
-  - **controllerAs syntax**: Controllers are classes, so use the `controllerAs` syntax at all times
+  - **controllerAs 構文**: Controller はクラスであるため、常に `controllerAs` 構文を利用する
 
     ```html
     <!-- bad -->
@@ -117,9 +117,9 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
     </div>
     ```
 
-  - In the DOM we get a variable per controller, which aids nested controller methods avoiding any `$parent` calls
+  - DOM において controller につき変数を定義することで、ネストされた controller で `$parent` の呼び出しを避ける
 
-  - The `controllerAs` syntax uses `this` inside controllers which gets bound to `$scope`
+  - `controllerAs` 構文では `$scope` にバインドされる controller 内で `this` を利用する
 
     ```javascript
     // bad
@@ -139,9 +139,9 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
     }
     ```
 
-  - Only use `$scope` in `controllerAs` when necessary, for example publishing and subscribing events using `$emit`, `$broadcast`, `$on` or using `$watch`, try to limit the use of these, however and treat `$scope` uses as special
+  - `$emit`、`$broadcast`、`$on` や `$watch` を利用する場合など、必要なケースに限って `controllerAs` 内で `$scope` を利用する
 
-  - **Inheritance**: Use prototypal inheritance when extending controller classes
+  - **継承**: controller クラスを拡張する場合は prototype 継承を利用する
 
     ```javascript
     function BaseCtrl () {
@@ -163,9 +163,9 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
     }
     ```
 
-  - Use `Object.create` with a polyfill for browser support
+  - `Object.create` をレガシーブラウザでもサポートするためには polyfill を利用する
 
-  - **Zero-logic**: No logic inside a controller, delegate to services
+  - **Zero-logic**: controller 内にはロジックを無くし, service に委譲する
 
     ```javascript
     // bad
@@ -181,13 +181,13 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
     }
     ```
 
-  - Think "skinny controller, fat service"
+  - "skinny controller, fat service" を念頭に置く
 
 **[Back to top](#table-of-contents)**
 
 ## Services
 
-  - Services are classes and are instantiated with the `new` keyword, use `this` for public methods and variables
+  - service はクラスで、`new` でインスタンス化し、パブリックなメソッドと変数には `this` を利用する
 
     ```javascript
     function SomeService () {
@@ -201,7 +201,7 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
 
 ## Factory
 
-  - **Singletons**: Factories are singletons, return a host Object inside each Factory to avoid primitive binding issues
+  - **シングルトン**: factory はシングルトンで、primitive binding issues（子スコープの変更を親スコープで検知できなくなる問題で、ng-model で '.' を使うようにすることで回避可能な問題）を避けるために factory 内のホストオブジェクトを返す
 
     ```javascript
     // bad
@@ -227,13 +227,13 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
     }
     ```
 
-  - This way bindings are mirrored across the host Object, primitive values cannot update alone using the revealing module pattern
+  - このバインディングであればホストオブジェクト越しにミラーされる。"Revealing Module Pattern" では primitive の値は更新されない。
 
 **[Back to top](#table-of-contents)**
 
 ## Directives
 
-  - **Declaration restrictions**: Only use `custom element` and `custom attribute` methods for declaring your Directives (`{ restrict: 'EA' }`) depending on the Directive's role
+  - **restrict**: 独自 directive には `custom element` と `custom attribute` のみ利用する（`{ restrict: 'EA' }`）
 
     ```html
     <!-- bad -->
@@ -247,9 +247,9 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
     <div my-directive></div>
     ```
 
-  - Comment and class name declarations are confusing and should be avoided. Comments do not play nicely with older versions of IE, using an attribute is the safest method for browser coverage.
+  - コメントとクラス名での宣言は混乱しやすいため使うべきでない。コメントでの宣言は古いバージョンの IE で動作せず、属性での宣言が最も安全である。
 
-  - **Templating**: Use `Array.join('')` for clean templating
+  - **template**: テンプレートをすっきりさせるために `Array.join('')` を利用する
 
     ```javascript
     // bad
@@ -273,7 +273,7 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
     }
     ```
 
-  - **DOM manipulation**: Only takes place inside Directives, never a controller/service
+  - **DOM 操作**: directive 内でのみ行い、controller / service では決して行わない
 
     ```javascript
     // bad
@@ -302,7 +302,7 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
       .directive('dragUpload', dragUpload);
     ```
 
-  - **Naming conventions**: Never `ng-*` prefix custom directives, they might conflict future native directives
+  - **命名規約**: 将来、標準の directive と名前が衝突しないよう、独自 directive に `ng-*` を使わない
 
     ```javascript
     // bad
@@ -324,9 +324,9 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
       .directive('dragUpload', dragUpload);
     ```
 
-  - Directives and Filters are the _only_ providers that we have the first letter as lowercase, this is due to strict naming conventions in Directives due to the way Angular translates `camelCase` to hyphenated, so `dragUpload` will become `<div drag-upload></div>` when used on an element.
+  - directive と filter を先頭文字を小文字で命名する。これは、Angular が `camelCase` をハイフンつなぎにする命名規約によるもので、つまり `dragUpload` が要素で使われるときには `<div drag-upload></div>` となる。
 
-  - **controllerAs**: Use the `controllerAs` syntax inside Directives also
+  - **controllerAs**: directive 内でも `controllerAs` 構文を利用する
 
     ```javascript
     // bad
@@ -359,7 +359,7 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
 
 ## Filters
 
-  - **Global filters**: Create global filters only using `angular.filter()` never use local filters inside Controllers/Services
+  - **グローバル filters**: `angular.filter()` を使ってグローバルな filter を作成し、controller / service 内でローカルな filter を作成しない
 
     ```javascript
     // bad
@@ -387,13 +387,13 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
       .filter('startsWithLetterA', startsWithLetterA);
     ```
 
-  - This enhances testing and reusability
+  - テストのしやすさと再利用性を高めるため
 
 **[Back to top](#table-of-contents)**
 
 ## Routing resolves
 
-  - **Promises**: Resolve dependencies of a Controller in the `$routeProvider` (or `$stateProvider` for `ui-router`) not the Controller itself
+  - **Promises**: `$routeProvider`（または `ui-router` の `$stateProvider`）内で controller の依存を解決する
 
     ```javascript
     // bad
@@ -425,7 +425,7 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
       .config(config);
     ```
 
-  - **Controller.resolve property**: Never bind logic to the router itself, reference a `resolve` property for each Controller to couple the logic
+  - **Controller.resolve プロパティ**: ロジックを router にバインドせず、controller の `resolve` プロパティでロジックを関連付ける
 
     ```javascript
     // bad
@@ -469,13 +469,13 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
     }
     ```
 
-  - This keeps resolve dependencies inside the same file as the Controller and the router free from logic
+  - こうすることで controller と同じファイル内に resolve の依存を持たせ、router をロジックから開放する
 
 **[Back to top](#table-of-contents)**
 
 ## Publish and subscribe events
 
-  - **$scope**: use the `$emit` and `$broadcast` methods to trigger events to direct relationship scopes only
+  - **$scope**: scope 間をつなぐトリガーイベントとして `$emit` と `$broadcast` を使う
 
     ```javascript
     // up the $scope
@@ -485,14 +485,14 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
     $scope.$broadcast('customEvent', data);
     ```
 
-  - **$rootScope**: use only `$emit` as an application-wide event bus and remember to unbind listeners
+  - **$rootScope**: アプリケーション全体のイベントとして `$emit` を使い、アンバインドするリスナーを忘れないようにする
 
     ```javascript
     // all $rootScope.$on listeners
     $rootScope.$emit('customEvent', data);
     ```
 
-  - Hint: `$rootScope.$on` listeners are different to `$scope.$on` listeners and will always persist so they need destroying when the relevant `$scope` fires the `$destroy` event
+  - ヒント: `$rootScope.$on` リスナーは、`$scope.$on` リスナーと異って常に残存するため、関連する `$scope` が `$destroy` イベントを発生させたときに破棄する必要がある
 
     ```javascript
     // call the closure
@@ -500,7 +500,7 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
     $scope.$on('$destroy', unbind);
     ```
 
-  - For multiple `$rootScope` listeners, use an Object literal and loop each one on the `$destroy` event to unbind all automatically
+  - `$rootScope` リスナーが複数ある場合には、Object リテラルとループを利用して `$destroy` イベント時に自動的にアンバインドする
 
     ```javascript
     var rootListeners = {
@@ -515,9 +515,9 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
 
 **[Back to top](#table-of-contents)**
 
-## Angular wrapper references
+## Angular ラッパー参照
 
-  - **$document and $window**: Use `$document` and `$window` at all times to aid testing and Angular references
+  - **$document と $window**: `$document` と `$window` を常に利用する
 
     ```javascript
     // bad
@@ -543,7 +543,7 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
     }
     ```
 
-  - **$timeout and $interval**: Use `$timeout` and `$interval` over their native counterparts to keep Angular's two way data binding up to date
+  - **$timeout と $interval**: Angular の双方向データバインドを維持するために `$timeout` と `$interval` を利用する
 
     ```javascript
     // bad
@@ -571,9 +571,9 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
 
 **[Back to top](#table-of-contents)**
 
-## Comment standards
+## コメント
 
-  - **jsDoc**: Use jsDoc syntax to document function names, description, params and returns
+  - **jsDoc**: function 名、説明、パラメータ、返り値のドキュメント化に jsDoc 構文を使用する
 
     ```javascript
     /**
@@ -601,9 +601,9 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
 
 **[Back to top](#table-of-contents)**
 
-## Minification and annotation
+## Minification と annotation
 
-  - **ng-annotate**: Use [ng-annotate](//github.com/olov/ng-annotate) for Gulp as `ng-min` is deprecated and comment functions that need automated dependency injection using `/** @ngInject */`
+  - **ng-annotate**: `ng-min` が deprecated であり [ng-annotate](//github.com/olov/ng-annotate) for Gulp を利用し、`/** @ngInject */` コメントを使用して自動的に function を DI（dependency injection）させる
 
     ```javascript
     /**
@@ -617,7 +617,7 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
       .controller('MainCtrl', MainCtrl);
     ```
 
-  - Which produces the following output with the `$inject` annotation
+  - `$inject` アノテーションにより以下の出力となる
 
     ```javascript
     /**
@@ -635,7 +635,7 @@ From my experience with [Angular](//angularjs.org), [several talks](https://spea
 **[Back to top](#table-of-contents)**
 
 ## Angular docs
-For anything else, API reference, check the [Angular documentation](//docs.angularjs.org/api).
+API リファレンスなど、その他の情報は [Angular documentation](//docs.angularjs.org/api) を確認する。
 
 ## Contributing
 
