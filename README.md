@@ -558,9 +558,9 @@
     }
 
     // good
-    function dragUpload () {
+    function dragUpload ($timeout) {
       return {
-        link: function (scope, element, attrs, $timeout) {
+        link: function (scope, element, attrs) {
           $timeout(function () {
             //
           }, 1000);
