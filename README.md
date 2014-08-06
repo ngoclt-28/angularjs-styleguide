@@ -16,6 +16,7 @@
   1. [Filters](#filters)
   1. [Routing resolves](#routing-resolves)
   1. [Publish and subscribe events](#publish-and-subscribe-events)
+  1. [Performance](#performance)
   1. [Angular wrapper references](#angular-wrapper-references)
   1. [Comment standards](#comment-standards)
   1. [Minification and annotation](#minification-and-annotation)
@@ -515,7 +516,31 @@
 
 **[Back to top](#table-of-contents)**
 
-## Angular ラッパー参照
+## Performance
+
+  - **ワンタイムのバインディング**: Angular の新しいバージョン（v1.3.0-beta.10+）では、ワンタイムのバインディング `{{ ::value }}` を利用する
+
+    ```html
+    // bad
+    <h1>{{ vm.title }}</h1>
+
+    // good
+    <h1>{{ ::vm.title }}</h1>
+    ```
+    
+    *Why?* : `undefined` の変数が解決された後に `$$watchers` から取り除き、ダーティチェックでのパフォーマンスを改善する
+
+  - **$scope.$digest を検討**: `$scope.$apply` より `$scope.$digest` を利用して子スコープのみ更新する
+
+    ```javascript
+    $scope.$digest();
+    ```
+    
+    *Why?* : `$scope.$apply` は `$rootScope.$digest` を呼び出すためアプリケーション全体 `$$watchers`をダーティチェックするが、`$scope.$digest` は `$scope` スコープと子スコープのみ更新する
+
+**[Back to top](#table-of-contents)**
+
+## Angular wrapper references
 
   - **$document と $window**: `$document` と `$window` を常に利用する
 
@@ -571,7 +596,7 @@
 
 **[Back to top](#table-of-contents)**
 
-## コメント
+## Comment standards
 
   - **jsDoc**: function 名、説明、パラメータ、返り値のドキュメント化に jsDoc 構文を使用する
 
@@ -601,7 +626,7 @@
 
 **[Back to top](#table-of-contents)**
 
-## Minification と annotation
+## Minification and annotation
 
   - **ng-annotate**: `ng-min` が deprecated であり [ng-annotate](//github.com/olov/ng-annotate) for Gulp を利用し、`/** @ngInject */` コメントを使用して自動的に function を DI（dependency injection）させる
 
