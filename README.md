@@ -2,16 +2,18 @@
 
 *チーム開発のための AngularJS スタイルガイド by [@toddmotto](//twitter.com/toddmotto)*
 
-[講演](https://speakerdeck.com/toddmotto)やチーム開発での [Angular](//angularjs.org) の経験により作成した AngularJS アプリケーションのシンタックスや構造についてのスタイルガイド。
+チームで AngularJS アプリケーションを開発するための標準的なスタイルガイドとして、Angular アプリケーションについてのこれまでの[記事](http:////toddmotto.com)、[講演](https://speakerdeck.com/toddmotto)、そして構築してきた経験を基にして、コンセプト、シンタックス、規約についてまとめている。
 
-> See the [original article](http://toddmotto.com/opinionated-angular-js-styleguide-for-teams)
+#### コミュニティ
+[John Papa](//twitter.com/John_Papa) と私は Angular スタイルのパターンについて話し合い、それによってこのガイドはよりすばらしいものとなっている。それぞれのスタイルガイドをリリースしているので、考えを比較するためにも [John のスタイルガイド](//github.com/johnpapa/angularjs-styleguide)もぜひ確認してみてほしい。
 
-## 目次
+> See the [original article](http://toddmotto.com/opinionated-angular-js-styleguide-for-teams) that sparked this off
+
+## Table of Contents
 
   1. [Modules](#modules)
   1. [Controllers](#controllers)
-  1. [Services](#services)
-  1. [Factory](#factory)
+  1. [Services and Factory](#services-and-factory)
   1. [Directives](#directives)
   1. [Filters](#filters)
   1. [Routing resolves](#routing-resolves)
@@ -26,24 +28,24 @@
   - **定義**: 変数を使わずに setter / getter で module を定義
 
     ```javascript
-    // bad
+    // avoid
     var app = angular.module('app', []);
     app.controller();
     app.factory();
 
-    // good
+    // recommended
     angular
       .module('app', [])
       .controller()
       .factory();
     ```
 
-  - 注釈: `angular.module('app', []);` を setter、`angular.module('app');` を getter として使う。setter で module を定義し、他のインスタンスからは getter でその module を取得して利用する。
+  - Note: `angular.module('app', []);` を setter、`angular.module('app');` を getter として使う。setter で module を定義し、他のインスタンスからは getter でその module を取得して利用する。
 
   - **メソッド**: コールバックとして記述せず、function を定義してメソッドに渡す
 
     ```javascript
-    // bad
+    // avoid
     angular
       .module('app', [])
       .controller('MainCtrl', function MainCtrl () {
@@ -53,7 +55,7 @@
 
       });
 
-    // good
+    // recommended
     function MainCtrl () {
 
     }
@@ -66,7 +68,7 @@
       .service('SomeService', SomeService);
     ```
 
-  - コードのネストが深くなることを抑え、可読性を高める
+  - コードのネストが深くなることを抑え、可読性を高められる
   
   - **IIFE（イッフィー：即時関数式）スコープ**: Angular に渡す function の定義でグローバルスコープを汚染することを避けるため、複数ファイルを連結（concatenate）するビルドタスクで IIFE 内にラップする
   
@@ -104,26 +106,26 @@
 
 ## Controllers
 
-  - **controllerAs 構文**: Controller はクラスであるため、常に `controllerAs` 構文を利用する
+  - **controllerAs**: Controller はクラスであるため、常に `controllerAs` を利用する
 
     ```html
-    <!-- bad -->
+    <!-- avoid -->
     <div ng-controller="MainCtrl">
       {{ someObject }}
     </div>
 
-    <!-- good -->
+    <!-- recommended -->
     <div ng-controller="MainCtrl as main">
       {{ main.someObject }}
     </div>
     ```
 
-  - DOM において controller につき変数を定義することで、ネストされた controller で `$parent` の呼び出しを避ける
+  - DOM で controller ごとに変数を定義し、`$parent` の利用を避ける
 
-  - `controllerAs` 構文では `$scope` にバインドされる controller 内で `this` を利用する
+  - `controllerAs` では controller 内で `$scope` にバインドされる `this` を利用する
 
     ```javascript
-    // bad
+    // avoid
     function MainCtrl ($scope) {
       $scope.someObject = {};
       $scope.doSomething = function () {
@@ -131,7 +133,7 @@
       };
     }
 
-    // good
+    // recommended
     function MainCtrl () {
       this.someObject = {};
       this.doSomething = function () {
@@ -140,7 +142,7 @@
     }
     ```
 
-  - `$emit`、`$broadcast`、`$on` や `$watch` を利用する場合など、必要なケースに限って `controllerAs` 内で `$scope` を利用する
+  - `$emit`、`$broadcast`、`$on` や `$watch` で必要とならない限り、`controllerAs` では `$scope` を利用しない
 
   - **継承**: controller クラスを拡張する場合は prototype 継承を利用する
 
@@ -166,29 +168,80 @@
 
   - `Object.create` をレガシーブラウザでもサポートするためには polyfill を利用する
 
-  - **Zero-logic**: controller 内にはロジックを無くし, service に委譲する
+  - **controllerAs 'vm'**: controller の `this` コンテキストを、`ViewModel` を意味する `vm` として保持する
 
     ```javascript
-    // bad
+    // avoid
     function MainCtrl () {
       this.doSomething = function () {
 
       };
     }
 
-    // good
+    // recommended
     function MainCtrl (SomeService) {
-      this.doSomething = SomeService.doSomething;
+      var vm = this;
+      vm.doSomething = SomeService.doSomething;
     }
     ```
 
-  - "skinny controller, fat service" を念頭に置く
+    *Why?* : Function コンテキストが `this` の値を変えてしまうことによる `.bind()` の利用とスコープの問題を回避するため
+
+  - **プレゼンテーションロジックのみ (MVVM)**: controller 内ではプレゼンテーションロジックのみとし、ビジネスロジックは service に委譲する
+
+    ```javascript
+    // avoid
+    function MainCtrl () {
+      
+      var vm = this;
+
+      $http
+        .get('/users')
+        .success(function (response) {
+          vm.users = response;
+        });
+
+      vm.removeUser = function (user, index) {
+        $http
+          .delete('/user/' + user.id)
+          .then(function (response) {
+            vm.users.splice(index, 1);
+          });
+      };
+
+    }
+
+    // recommended
+    function MainCtrl (UserService) {
+
+      var vm = this;
+
+      UserService
+        .getUsers()
+        .then(function (response) {
+          vm.users = response;
+        });
+
+      vm.removeUser = function (user, index) {
+        UserService
+          .removeUser(user)
+          .then(function (response) {
+            vm.users.splice(index, 1);
+          });
+      };
+
+    }
+    ```
+
+    *Why?* : controller では service からモデルのデータを取得するようにしてビジネスロジックを避け、ViewModel としてモデル・ビュー間のデータフローを制御させる。controller 内のビジネスロジックは service のテストを不可能にしてしまう。
 
 **[Back to top](#table-of-contents)**
 
-## Services
+## Services and Factory
 
-  - service はクラスで、`new` でインスタンス化し、パブリックなメソッドと変数には `this` を利用する
+  - すべての Angular Services はシングルトンで、`.service()` と `.factory()` はオブジェクトの生成され方が異なる
+
+  **Services**: `constructor` function として `new` で生成し、パブリックなメソッドと変数に `this` を使う
 
     ```javascript
     function SomeService () {
@@ -196,28 +249,16 @@
 
       };
     }
+    angular
+      .module('app')
+      .service('SomeService', SomeService);
     ```
 
-**[Back to top](#table-of-contents)**
+  **Factory**: ビジネスロジックやプロバイダモジュールで、オブジェクトやクロージャを返す
 
-## Factory
-
-  - **シングルトン**: factory はシングルトンで、primitive binding issues（子スコープの変更を親スコープで検知できなくなる問題で、ng-model で '.' を使うようにすることで回避可能な問題）を避けるために factory 内のホストオブジェクトを返す
+  - 常にホストオブジェクトを返す
 
     ```javascript
-    // bad
-    function AnotherService () {
-      var someValue = '';
-      var someMethod = function () {
-
-      };
-      return {
-        someValue: someValue,
-        someMethod: someMethod
-      };
-    }
-
-    // good
     function AnotherService () {
       var AnotherService = {};
       AnotherService.someValue = '';
@@ -226,9 +267,12 @@
       };
       return AnotherService;
     }
+    angular
+      .module('app')
+      .factory('AnotherService', AnotherService);
     ```
 
-  - このバインディングであればホストオブジェクト越しにミラーされる。"Revealing Module Pattern" では primitive の値は更新されない。
+    *Why?* : "Revealing Module Pattern" では primitive な値は更新されない
 
 **[Back to top](#table-of-contents)**
 
@@ -237,23 +281,23 @@
   - **restrict**: 独自 directive には `custom element` と `custom attribute` のみ利用する（`{ restrict: 'EA' }`）
 
     ```html
-    <!-- bad -->
+    <!-- avoid -->
 
     <!-- directive: my-directive -->
     <div class="my-directive"></div>
 
-    <!-- good -->
+    <!-- recommended -->
 
     <my-directive></my-directive>
     <div my-directive></div>
     ```
 
-  - コメントとクラス名での宣言は混乱しやすいため使うべきでない。コメントでの宣言は古いバージョンの IE で動作せず、属性での宣言が最も安全である。
+  - コメントとクラス名での宣言は混乱しやすいため使うべきでない。コメントでの宣言は古いバージョンの IE では動作せず、属性での宣言が古いブラウザをカバーするのにもっとも安全である。
 
   - **template**: テンプレートをすっきりさせるために `Array.join('')` を利用する
 
     ```javascript
-    // bad
+    // avoid
     function someDirective () {
       return {
         template: '<div class="some-directive">' +
@@ -262,7 +306,7 @@
       };
     }
 
-    // good
+    // recommended
     function someDirective () {
       return {
         template: [
@@ -274,10 +318,12 @@
     }
     ```
 
-  - **DOM 操作**: directive 内でのみ行い、controller / service では決して行わない
+    *Why?* : 適切なインデントでコードの可読性を高められ、不適切に `+` を使ってしまうことによるエラーを避けられる
+
+  - **DOM 操作**: directive 内のみとし、controller / service では DOM を操作しない
 
     ```javascript
-    // bad
+    // avoid
     function UploadCtrl () {
       $('.dragzone').on('dragend', function () {
         // handle drop functionality
@@ -287,12 +333,12 @@
       .module('app')
       .controller('UploadCtrl', UploadCtrl);
 
-    // good
+    // recommended
     function dragUpload () {
       return {
         restrict: 'EA',
-        link: function (scope, element, attrs) {
-          element.on('dragend', function () {
+        link: function ($scope, $element, $attrs) {
+          $element.on('dragend', function () {
             // handle drop functionality
           });
         }
@@ -303,10 +349,10 @@
       .directive('dragUpload', dragUpload);
     ```
 
-  - **命名規約**: 将来、標準の directive と名前が衝突しないよう、独自 directive に `ng-*` を使わない
+  - **命名規約**: 将来的に標準 directive と名前が衝突する可能性があるため、`ng-*` を独自 directive に使わない
 
     ```javascript
-    // bad
+    // avoid
     // <div ng-upload></div>
     function ngUpload () {
       return {};
@@ -315,7 +361,7 @@
       .module('app')
       .directive('ngUpload', ngUpload);
 
-    // good
+    // recommended
     // <div drag-upload></div>
     function dragUpload () {
       return {};
@@ -325,12 +371,12 @@
       .directive('dragUpload', dragUpload);
     ```
 
-  - directive と filter を先頭文字を小文字で命名する。これは、Angular が `camelCase` をハイフンつなぎにする命名規約によるもので、つまり `dragUpload` が要素で使われるときには `<div drag-upload></div>` となる。
+  - directive と filter は先頭文字を小文字で命名する。これは、Angular が `camelCase` をハイフンつなぎとする命名規約によるもので、`dragUpload` が要素で使われた場合は `<div drag-upload></div>` となる。
 
-  - **controllerAs**: directive 内でも `controllerAs` 構文を利用する
+  - **controllerAs**: directive でも `controllerAs` を使う
 
     ```javascript
-    // bad
+    // avoid
     function dragUpload () {
       return {
         controller: function ($scope) {
@@ -342,7 +388,7 @@
       .module('app')
       .directive('dragUpload', dragUpload);
 
-    // good
+    // recommended
     function dragUpload () {
       return {
         controllerAs: 'dragUpload',
@@ -360,14 +406,14 @@
 
 ## Filters
 
-  - **グローバル filters**: `angular.filter()` を使ってグローバルな filter を作成し、controller / service 内でローカルな filter を作成しない
+  - **グローバル filter**: angular.filter() を使ってグローバルな filter を作成し、controller / service 内でローカルな filter を使わない
 
     ```javascript
-    // bad
+    // avoid
     function SomeCtrl () {
       this.startsWithLetterA = function (items) {
         return items.filter(function (item) {
-          return /$a/i.test(item.name);
+          return /^a/i.test(item.name);
         });
       };
     }
@@ -375,11 +421,11 @@
       .module('app')
       .controller('SomeCtrl', SomeCtrl);
 
-    // good
+    // recommended
     function startsWithLetterA () {
       return function (items) {
         return items.filter(function (item) {
-          return /$a/i.test(item.name);
+          return /^a/i.test(item.name);
         });
       };
     }
@@ -397,7 +443,7 @@
   - **Promises**: `$routeProvider`（または `ui-router` の `$stateProvider`）内で controller の依存を解決する
 
     ```javascript
-    // bad
+    // avoid
     function MainCtrl (SomeService) {
       var _this = this;
       // unresolved
@@ -411,7 +457,7 @@
       .module('app')
       .controller('MainCtrl', MainCtrl);
 
-    // good
+    // recommended
     function config ($routeProvider) {
       $routeProvider
       .when('/', {
@@ -429,7 +475,7 @@
   - **Controller.resolve プロパティ**: ロジックを router にバインドせず、controller の `resolve` プロパティでロジックを関連付ける
 
     ```javascript
-    // bad
+    // avoid
     function MainCtrl (SomeService) {
       this.something = SomeService.something;
     }
@@ -448,13 +494,13 @@
       });
     }
 
-    // good
+    // recommended
     function MainCtrl (SomeService) {
       this.something = SomeService.something;
     }
 
     MainCtrl.resolve = {
-      doSomething: function () {
+      doSomething: function (SomeService) {
         return SomeService.doSomething();
       }
     };
@@ -476,7 +522,7 @@
 
 ## Publish and subscribe events
 
-  - **$scope**: scope 間をつなぐトリガーイベントとして `$emit` と `$broadcast` を使う
+  - **$scope**: scope 間をつなぐイベントトリガーとして `$emit` と `$broadcast` を使う
 
     ```javascript
     // up the $scope
@@ -486,14 +532,14 @@
     $scope.$broadcast('customEvent', data);
     ```
 
-  - **$rootScope**: アプリケーション全体のイベントとして `$emit` を使い、アンバインドするリスナーを忘れないようにする
+  - **$rootScope**: アプリケーション全体のイベントとして `$emit` を使い、忘れずにリスナーをアンバインドする
 
     ```javascript
     // all $rootScope.$on listeners
     $rootScope.$emit('customEvent', data);
     ```
 
-  - ヒント: `$rootScope.$on` リスナーは、`$scope.$on` リスナーと異って常に残存するため、関連する `$scope` が `$destroy` イベントを発生させたときに破棄する必要がある
+  - ヒント: `$rootScope.$on` リスナーは、`$scope.$on` リスナーと異なり常に残存するため、関連する `$scope` が `$destroy` イベントを発生させたときに破棄する必要がある
 
     ```javascript
     // call the closure
@@ -501,7 +547,7 @@
     $scope.$on('$destroy', unbind);
     ```
 
-  - `$rootScope` リスナーが複数ある場合には、Object リテラルとループを利用して `$destroy` イベント時に自動的にアンバインドする
+  - `$rootScope` リスナーが複数ある場合は、Object リテラルでループして `$destroy` イベント時に自動的にアンバインドさせる
 
     ```javascript
     var rootListeners = {
@@ -518,25 +564,25 @@
 
 ## Performance
 
-  - **ワンタイムのバインディング**: Angular の新しいバージョン（v1.3.0-beta.10+）では、ワンタイムのバインディング `{{ ::value }}` を利用する
+  - **ワンタイムバインド**: Angular の新しいバージョン（v1.3.0-beta.10+）では、ワンタイムバインドのシンタックス `{{ ::value }}` を利用する
 
     ```html
-    // bad
+    // avoid
     <h1>{{ vm.title }}</h1>
 
-    // good
+    // recommended
     <h1>{{ ::vm.title }}</h1>
     ```
     
-    *Why?* : `undefined` の変数が解決された後に `$$watchers` から取り除き、ダーティチェックでのパフォーマンスを改善する
-
-  - **$scope.$digest を検討**: `$scope.$apply` より `$scope.$digest` を利用して子スコープのみ更新する
+    *Why?* : `undefined` の変数が解決されたときに `$$watchers` から取り除き、ダーティチェックでのパフォーマンスを改善する
+    
+  - **$scope.$digest を検討**: `$scope.$apply` でなく `$scope.$digest` を使い、子スコープのみを更新する
 
     ```javascript
     $scope.$digest();
     ```
     
-    *Why?* : `$scope.$apply` は `$rootScope.$digest` を呼び出すためアプリケーション全体 `$$watchers`をダーティチェックするが、`$scope.$digest` は `$scope` スコープと子スコープのみ更新する
+    *Why?* : `$scope.$apply` は `$rootScope.$digest` を呼び出すため、アプリケーション全体の `$$watchers` をダーティチェックするが、`$scope.$digest` は `$scope` のスコープと子スコープを更新する
 
 **[Back to top](#table-of-contents)**
 
@@ -545,10 +591,10 @@
   - **$document と $window**: `$document` と `$window` を常に利用する
 
     ```javascript
-    // bad
+    // avoid
     function dragUpload () {
       return {
-        link: function (scope, element, attrs) {
+        link: function ($scope, $element, $attrs) {
           document.addEventListener('click', function () {
 
           });
@@ -556,10 +602,10 @@
       };
     }
 
-    // good
+    // recommended
     function dragUpload () {
       return {
-        link: function (scope, element, attrs, $document) {
+        link: function ($scope, $element, $attrs, $document) {
           $document.addEventListener('click', function () {
 
           });
@@ -568,13 +614,13 @@
     }
     ```
 
-  - **$timeout と $interval**: Angular の双方向データバインドを維持するために `$timeout` と `$interval` を利用する
+  - **$timeout と $interval**: Angular の双方向データバインドが最新の状態を維持するよう `$timeout` と `$interval` を利用する
 
     ```javascript
-    // bad
+    // avoid
     function dragUpload () {
       return {
-        link: function (scope, element, attrs) {
+        link: function ($scope, $element, $attrs) {
           setTimeout(function () {
             //
           }, 1000);
@@ -582,10 +628,10 @@
       };
     }
 
-    // good
+    // recommended
     function dragUpload ($timeout) {
       return {
-        link: function (scope, element, attrs) {
+        link: function ($scope, $element, $attrs) {
           $timeout(function () {
             //
           }, 1000);
@@ -598,7 +644,7 @@
 
 ## Comment standards
 
-  - **jsDoc**: function 名、説明、パラメータ、返り値のドキュメント化に jsDoc 構文を使用する
+  - **jsDoc**: jsDoc で function 名、説明、パラメータ、返り値をドキュメント化する
 
     ```javascript
     /**
@@ -628,7 +674,7 @@
 
 ## Minification and annotation
 
-  - **ng-annotate**: `ng-min` が deprecated であり [ng-annotate](//github.com/olov/ng-annotate) for Gulp を利用し、`/** @ngInject */` コメントを使用して自動的に function を DI（dependency injection）させる
+  - **ng-annotate**: `ng-min` は deprecated なので、[ng-annotate](//github.com/olov/ng-annotate) for Gulp を利用し、`/** @ngInject */` で function にコメントして自動的に DI (dependency injection) させる
 
     ```javascript
     /**
@@ -642,7 +688,7 @@
       .controller('MainCtrl', MainCtrl);
     ```
 
-  - `$inject` アノテーションにより以下の出力となる
+  - 以下のような `$inject` アノテーションを含む出力となる
 
     ```javascript
     /**
@@ -660,7 +706,7 @@
 **[Back to top](#table-of-contents)**
 
 ## Angular docs
-API リファレンスなど、その他の情報は [Angular documentation](//docs.angularjs.org/api) を確認する。
+その他、API リファレンスなどの情報は、[Angular documentation](//docs.angularjs.org/api) を確認する。
 
 ## Contributing
 
